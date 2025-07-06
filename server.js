@@ -97,9 +97,15 @@ const app = express(); //blueprint of express js or instance
 //import db
 const db = require("./db");
 
+//import env
+require('dotenv').config();
+
 //import body parser-it parses and extract data in required format and available in req.body
 const bodyParser = require("body-parser");
 app.use(bodyParser.json()); //bcz hm json data type bhej rhe h
+
+//using variable from env file
+const PORT=process.env.PORT||3000;//agr online port assign ni hota toh ye local host 3000 pe chlega 
 
 //import Perosn named model
 // const Person = require("./models/Person");
@@ -254,6 +260,7 @@ app.use('/menu',menuItemRoutes);
 //url is same as we were using earlier like /person/chef or whatever
 
 
-app.listen(3000, () => {
+
+app.listen(PORT, () => {
   console.log("server is active, listening on port 3000"); //if server would be active then it will be executed
 }); //port no i.e room no means localhost:3000
