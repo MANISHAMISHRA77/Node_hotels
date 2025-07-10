@@ -5,8 +5,9 @@ require('dotenv').config();
 
 //define the mongoose connection url
 //mongodb installation k saath we get this url
-// const mongoURL=process.env.MONGO_URL_LOCAL //it is local host url  //hotels is just my database name
-const mongoURL=process.env.MONGO_URL;  //it is a online database hosting url means we have hosted this online bas hme link change krna h vs code me local db se htane k liye
+const mongoURL=process.env.MONGO_URL_LOCAL //it is local host url  //hotels is just my database name
+// const mongoURL=process.env.MONGO_URL;  //it is a online database hosting url means we have hosted this online bas hme link change krna h vs code me local db se htane k liye
+//it is now publically accessible db  cuz we have hosted it online
 
 //setup mongoDB connection
 mongoose.connect(mongoURL,{

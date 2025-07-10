@@ -11,10 +11,13 @@ const router=express.Router();
 //import Perosn named model
 const Person = require("./../models/Person");//used ../ bcz person file do file pichhe h
 
+//import jwt midllware function and jwt creation function
+const {jwtAuthMiddleware, generateToken}=require('./../jwt');//bcz now we will be using jwt verification and creation function while passing routes thats why imported here
+
 
 //post route to add a person
-//deletd person from /person from all methods i.e in endpoints here bcz all has common person and that will be passed in app.use() so every rout(path) will have /person thats why inserted there in server.js at app.use('/person,..)
-router.post("/", async (req, res) => {
+//removed person from /person from all methods i.e in endpoints here bcz all has common person and that will be passed in app.use() so every rout(path) will have /person thats why inserted there in server.js at app.use('/person,..)
+router.post("/signup", async (req, res) => {
   //async bcz db operation may take time
   try {
     const data = req.body; //assuming request body contains the person data i.e client jo data bhej rha h and body parser storing in this req.body
@@ -23,15 +26,71 @@ router.post("/", async (req, res) => {
     // save the new person to the database
     const savedPerson = await newPerson.save(); //jab tk hmara new document databse me addition process ni ho jata it may fail then it will redirect to catch direct from this line
     console.log("data saved");
-    res.status(200).json(savedPerson);
+
+    const payload={//to pass more than one things in payload and it should be in object format
+      id:savedPerson.id,//no need to write _id ,to extract unique id normal id is used 
+      username:savedPerson.username
+    }
+
+    //now generating token for new person saved
+    // const token=generateToken(savedPerson.username);//savedPerson.username is payload for generate function for that token
+    //if we want to pass payload in proper object form having id and username means more info then 
+    const token=generateToken(payload);
+    console.log(JSON.stringify(payload));
+    console.log('Token is: ',token);
+
+    res.status(200).json({response:savedPerson,token:token});
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
+
+//login function->at login time client send username and password to the server and server checks that username and password in database. if the user exists with that password then it returns token for the user at the time of login(it is not signup) otherwise error
+router.post('/login',async (req,res)=>{//post method cuz we have to send data to server
+  try{
+    //extract username and paaword form requset body
+    const {username,password}=req.body;
+    //find user by username
+    const user=await Person.findOne({username:username});
+    //if user doesnt exist or password doesnt match, return error
+    if(!user || !(await user.comparePassword(password))){
+      return res.status(401).json({error:'Invalid username or password'});
+    }
+    //generate token
+    const payload={
+      id: user.id,
+      username: user.username
+    }
+    const token=generateToken(payload);
+    //return token as response
+    res.json({token});
+  }catch(err){
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+//profile route->it is protected route bcz we wre adding authentication to this route
+//in jwt auth middleware function the decoded value is stored in req.user (watch jwt middleware func)payload is stored in request object
+router.get('/profile',jwtAuthMiddleware,async (req,res)=>{//this route demand token in http get request
+  try{
+    const userData=req.user;//accesing user info from req.user
+    console.log("Userdata: ",userData);//u can watch data using console
+
+    const userId=userData.id;//uesr data contains id information abt user too
+    const user=await Person.findById(userId);//now find the person with this userid
+    //return respones as user
+    res.status(200).json({user});
+  }catch(err){
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+})
 //GET method to get the person(means to get the collections details)
-router.get("/", async (req, res) => {
+router.get("/",jwtAuthMiddleware, async (req, res) => {//protected route->now we have added the jwt middleware so it will demand for token with http request to verify
   try {
     const data = await Person.find(); //data fetch krne me may be time lg jaye
     console.log("data fetched");

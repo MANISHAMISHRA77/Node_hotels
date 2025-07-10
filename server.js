@@ -100,20 +100,39 @@ const db = require("./db");
 //import env
 require('dotenv').config();
 
+//import passport from auth file
+const passport=require('./auth')
+
+
 //import body parser-it parses and extract data in required format and available in req.body
 const bodyParser = require("body-parser");
 app.use(bodyParser.json()); //bcz hm json data type bhej rhe h
 
 //using variable from env file
-const PORT=process.env.PORT||3000;//agr online port assign ni hota toh ye local host 3000 pe chlega 
+const PORT=process.env.PORT||3000;//agr online hpsting pe kuch port assign ni hota toh ye local host 3000 pe chlega (if online hosted)->meaning of this line
+
+
+//middleware function->logging means we want the date and time when a user hits to these requests means methods and also it will give which url user hit 
+const logRequest=(req,res,next)=>{
+  console.log(`[${new Date().toLocaleString()}] Request Made to : ${req.originalUrl}`);
+  next();//this is callback function of middleware .it must be called after completion of one middlework bcz it calls for move on to next phase(go to next middleware if exist otherwise return response of the request made) 
+}
+
+//to use middleware to each n every routes
+app.use(logRequest);
+
+//now initialising passport(imported passport from auth file)
+app.use(passport.initialize());
 
 //import Perosn named model
 // const Person = require("./models/Person");
-const MenuItem = require("./models/MenuItem");
+// const MenuItem = require("./models/MenuItem");
 //now we will create all connectivity and all operations in database through this model
 
 //one method means endpoint
-app.get("/", (req, res) => {
+//if we have to apply authentication in a method then use-> passport.authenticate('local',{Strategy:false}) in its 2nd parameter
+const localAuthMiddleware=passport.authenticate('local',{session:false});
+app.get("/",localAuthMiddleware,(req, res) => {
   //means localhost:3000/
   res.send("Welcome to my hotel, how i can help you??");
 });
@@ -255,8 +274,9 @@ const personRoutes=require('./routes/personRoutes');
 const menuItemRoutes=require('./routes/menuItemRoutes');
 //here inserted /person in app.use bcz it was common in all the endpoints
 //use the routes->means now it is using routes her in this server file and all endpoints will start with /person
+//localAuthMiddleware as its 2nd parameter if u want to use username aossword authentication-----// authentication is applied to any person type of routes->so basically pure k pure har type k person me lga diya authentication if this will be used
 app.use('/person',personRoutes);
-app.use('/menu',menuItemRoutes);
+app.use('/menu',menuItemRoutes); //menu client ko bhi accessible hona chahiye so no need of suthentication needed
 //url is same as we were using earlier like /person/chef or whatever
 
 
